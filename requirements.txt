@@ -1,1 +1,7 @@
 langchain
+langchain_community
+pypdf
+langchain_huggingface
+tiktoken
+chromadb
+openai
