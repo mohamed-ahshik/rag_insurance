@@ -8,3 +8,4 @@ llama-cpp-python
 unstructured
 pymupdf4llm
 langchain_experimental
+pre-commit
