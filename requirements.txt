@@ -4,4 +4,7 @@ pypdf
 langchain_huggingface
 tiktoken
 chromadb
-openai
+llama-cpp-python 
+unstructured
+pymupdf4llm
+langchain_experimental
