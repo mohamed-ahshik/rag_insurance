@@ -1,5 +1,4 @@
-import os
-from typing import List, str
+from typing import List
 
 import pymupdf4llm
 from langchain.retrievers import ContextualCompressionRetriever
@@ -7,54 +6,31 @@ from langchain.retrievers.document_compressors import CrossEncoderReranker
 from langchain.text_splitter import TokenTextSplitter
 from langchain.vectorstores import Chroma
 from langchain_community.cross_encoders import HuggingFaceCrossEncoder
-from langchain_community.document_loaders import DirectoryLoader
+from langchain_community.document_loaders import UnstructuredMarkdownLoader
 from langchain_core.vectorstores import VectorStoreRetriever
 from langchain_huggingface import HuggingFaceEmbeddings
 
-data_folder = r"/Users/user/Documents/personal_projects/rag_insurance/data"
 
-
-def get_pdf_files_in_folder(data_folder_dir: str) -> list:
+def convert_pdf_to_markdown(pdf_file: str) -> str:
     """
-    Get all pdf files names in the folder
+    Convert pdf file to markdown
 
     Parameters:
-    data_folder_dir (str): path to the folder
-
-    Returns:
-    pdf_files (list): list of pdf files in the folder
+    pdf_files (str): path to the pdf file
+    processed_pdf_file (str): path to the folder where the markdown files will be saved
 
     """
-    pdf_files = []
-    for file in os.listdir(data_folder):
-        if file.endswith(".pdf"):
-            pdf_files.append(file)
-    print("There are {} pdf files in the folder".format(len(pdf_files)))
+    split_file_name = pdf_file.split(".")
+    split_file_name[-1] = "md"
+    markdown_file_path = ".".join(split_file_name)
+    pdf_document = pymupdf4llm.to_markdown(pdf_file)
+    with open(markdown_file_path, "w") as file:
+        file.write(pdf_document)
 
-    return pdf_files
-
-
-def convert_pdf_to_markdown(pdf_files: list, processed_data_dir: str) -> None:
-    """
-    Convert pdf files to markdown
-
-    Parameters:
-    pdf_files (pdf): list of pdf files names
-    processed_data_dir (str): path to the folder where the markdown files will be saved
-
-    """
-    for files in pdf_files:
-        pdf_file = os.path.join(data_folder, files)
-        split_file_name = files.split(".")
-        split_file_name[-1] = "md"
-        markdown_file_name = ".".join(split_file_name)
-        pdf_document = pymupdf4llm.to_markdown(pdf_file)
-        save_path = os.path.join(processed_data_dir, markdown_file_name)
-        with open(save_path, "w") as file:
-            file.write(pdf_document)
+    return markdown_file_path
 
 
-def load_markdown_files(processed_data_dir: str) -> List:
+def load_markdown_files(processed_data_path: str) -> List:
     """
     Load markdown files
 
@@ -65,7 +41,7 @@ def load_markdown_files(processed_data_dir: str) -> List:
     docs (List): list of markdown files in langchain Document object
 
     """
-    loader = DirectoryLoader(processed_data_dir, glob="**/*.md")
+    loader = UnstructuredMarkdownLoader(processed_data_path)
     docs = loader.load()
     print(f"There are {len(docs)} documents loaded")
 
@@ -95,7 +71,9 @@ def get_chunks(docs: List, chunk_size: int = 1000, chunk_overlap: int = 300):
 
 def store_chunks_into_vectorstore(chunks: List) -> VectorStoreRetriever:
     # Create embeddings
-    embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
+    embeddings = HuggingFaceEmbeddings(
+        model_name="all-MiniLM-L6-v2", show_progress=True
+    )
     # Create vector store
     vectorstore = Chroma.from_documents(documents=chunks, embedding=embeddings)
     # Create vectorstore retriever
@@ -121,5 +99,15 @@ def get_compressed_docs(
     compression_retriever = ContextualCompressionRetriever(
         base_compressor=compressor, base_retriever=retriever
     )
+
+    return compression_retriever
+
+
+def run_preprocess(pdf_path: str) -> ContextualCompressionRetriever:
+    markdown_file_path = convert_pdf_to_markdown(pdf_path)
+    loaded_markdown_doc = load_markdown_files(markdown_file_path)
+    chunks = get_chunks(loaded_markdown_doc)
+    retriever = store_chunks_into_vectorstore(chunks)
+    compression_retriever = get_compressed_docs(retriever)
 
     return compression_retriever
