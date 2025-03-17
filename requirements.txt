@@ -9,3 +9,5 @@ unstructured
 pymupdf4llm
 langchain_experimental
 pre-commit
+streamlit
+streamlit-pdf-viewer
