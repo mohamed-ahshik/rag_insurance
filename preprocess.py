@@ -43,7 +43,6 @@ def load_markdown_files(processed_data_path: str) -> List:
     """
     loader = UnstructuredMarkdownLoader(processed_data_path)
     docs = loader.load()
-    print(f"There are {len(docs)} documents loaded")
 
     return docs
 
@@ -71,9 +70,19 @@ def get_chunks(docs: List, chunk_size: int = 1000, chunk_overlap: int = 300):
 
 def store_chunks_into_vectorstore(chunks: List) -> VectorStoreRetriever:
     # Create embeddings
+    # embeddings = HuggingFaceEmbeddings(
+    #     model_name="all-MiniLM-L6-v2", show_progress=True
+    # )
+    model_kwargs = {"trust_remote_code": True}
     embeddings = HuggingFaceEmbeddings(
-        model_name="all-MiniLM-L6-v2", show_progress=True
+        model_name="Lajavaness/bilingual-embedding-large",
+        show_progress=True,
+        model_kwargs=model_kwargs,
     )
+
+    # model = SentenceTransformer('Lajavaness/bilingual-embedding-large', trust_remote_code=True)
+    # print(embeddings)
+
     # Create vector store
     vectorstore = Chroma.from_documents(documents=chunks, embedding=embeddings)
     # Create vectorstore retriever
@@ -94,8 +103,9 @@ def get_compressed_docs(
     retriever (VectorStoreRetriever): vectorstore retriever
     """
 
-    model = HuggingFaceCrossEncoder(model_name="BAAI/bge-reranker-base")
-    compressor = CrossEncoderReranker(model=model, top_n=5)
+    # model = HuggingFaceCrossEncoder(model_name="BAAI/bge-reranker-base")
+    model = HuggingFaceCrossEncoder(model_name="cross-encoder/ms-marco-electra-base")
+    compressor = CrossEncoderReranker(model=model, top_n=3)
     compression_retriever = ContextualCompressionRetriever(
         base_compressor=compressor, base_retriever=retriever
     )

@@ -1,16 +1,26 @@
+import json
+
+import requests
 import streamlit as st
 from streamlit_pdf_viewer import pdf_viewer
 
-from load_model import load_model
+from preprocess import run_preprocess
 
 st.title("BASIC RAG INSURANCE")
 
 
 def generate_response(input_text):
-    model = load_model(
-        "/Users/user/Documents/personal_projects/rag_insurance/model/DeepSeek-R1-Distill-Llama-8B-Q4_K_M.gguf"
-    )
-    st.info(model.invoke(input_text))
+    print(input_text)
+    url = "http://localhost:11434/api/generate"
+    headers = {"Content-Type": "application/json"}
+    data = {
+        "model": "deepseek-r1:7b",
+        "prompt": input_text,
+        "stream": False,
+    }
+    response = requests.post(url, headers=headers, data=json.dumps(data))
+    response_dict = response.json()
+    st.info(response_dict["response"])
 
     # Allow the user to upload a PDF
 
@@ -34,4 +44,19 @@ with st.form("my_form"):
     )
     submitted = st.form_submit_button("Submit")
     if submitted:
-        generate_response(text)
+        compress_retriever = run_preprocess(file_path)
+        compress_docs = compress_retriever.invoke(text)
+        print(compress_docs)
+        prompt = f"""You are an assistant
+        Answer the following question:
+        {text}
+        
+        Only reply from the following documents:
+        <document>
+        {compress_docs}
+        </document>
+        
+        If you don't know the answer, please say "I don't know"
+        """
+
+        generate_response(prompt)
