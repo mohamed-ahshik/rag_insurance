@@ -44,7 +44,6 @@ if uploaded_file:
 
     pdf_viewer(file_path)
 
-
 with st.form("my_form"):
     text = st.text_area(
         "Enter text:",
@@ -56,15 +55,17 @@ with st.form("my_form"):
         compress_docs = compress_retriever.invoke(text)
         print(compress_docs)
         prompt = f"""You are an assistant
-        Answer the following question:
+        Understanding the question and providing the answer is your job.
+        Answer the following question based on the information provided in the documents.
+        Be clear and verbose in your response.
+        Here is the question:
         {text}
-    
         Only reply from the following documents:
         <document>
         {compress_docs}
         </document>
-        
         If you don't know the answer, please say "I don't know"
+        ## OUTPUT :
+        - Output in markdown format only.
         """
-
         generate_response(prompt)

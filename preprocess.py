@@ -3,7 +3,7 @@ from typing import List
 import pymupdf4llm
 from langchain.retrievers import ContextualCompressionRetriever
 from langchain.retrievers.document_compressors import CrossEncoderReranker
-from langchain.text_splitter import TokenTextSplitter
+from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.vectorstores import Chroma
 from langchain_community.cross_encoders import HuggingFaceCrossEncoder
 from langchain_community.document_loaders import UnstructuredMarkdownLoader
@@ -47,7 +47,7 @@ def load_markdown_files(processed_data_path: str) -> List:
     return docs
 
 
-def get_chunks(docs: List, chunk_size: int = 1000, chunk_overlap: int = 300):
+def get_chunks(docs: List, chunk_size: int = 500, chunk_overlap: int = 200):
     """
     Split documents into chunks with tokwn text splitter
 
@@ -59,10 +59,9 @@ def get_chunks(docs: List, chunk_size: int = 1000, chunk_overlap: int = 300):
 
     """
     # Split documents into chunks
-    text_splitter = TokenTextSplitter(
+    text_splitter = RecursiveCharacterTextSplitter(
         chunk_size=chunk_size, chunk_overlap=chunk_overlap
     )
-
     chunks = text_splitter.split_documents(docs)
 
     return chunks
@@ -98,7 +97,7 @@ def get_compressed_docs(
 
     # model = HuggingFaceCrossEncoder(model_name="BAAI/bge-reranker-base")
     model = HuggingFaceCrossEncoder(model_name="cross-encoder/ms-marco-electra-base")
-    compressor = CrossEncoderReranker(model=model, top_n=3)
+    compressor = CrossEncoderReranker(model=model, top_n=5)
     compression_retriever = ContextualCompressionRetriever(
         base_compressor=compressor, base_retriever=retriever
     )
