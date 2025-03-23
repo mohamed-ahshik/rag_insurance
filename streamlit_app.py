@@ -6,11 +6,19 @@ from streamlit_pdf_viewer import pdf_viewer
 
 from preprocess import run_preprocess
 
-st.title("BASIC RAG INSURANCE")
+st.title("Retrieval Augmented Generation")
 
 
-def generate_response(input_text):
-    print(input_text)
+def generate_response(input_text: str) -> None:
+    """
+    Generate a response using the DeepSeek API
+
+    Parameters:
+    input_text (str): The input text
+
+    Returns:
+    None
+    """
     url = "http://localhost:11434/api/generate"
     headers = {"Content-Type": "application/json"}
     data = {
@@ -40,7 +48,7 @@ if uploaded_file:
 with st.form("my_form"):
     text = st.text_area(
         "Enter text:",
-        "What are the three key pieces of advice for learning how to code?",
+        "Type your question here",
     )
     submitted = st.form_submit_button("Submit")
     if submitted:
@@ -50,7 +58,7 @@ with st.form("my_form"):
         prompt = f"""You are an assistant
         Answer the following question:
         {text}
-        
+    
         Only reply from the following documents:
         <document>
         {compress_docs}
